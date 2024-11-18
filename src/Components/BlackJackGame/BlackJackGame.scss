@@ -18,18 +18,23 @@
       z-index: 1;
       left: 0;
       top: 0;
-      width: $fullHeight;
-      height: $fullWidth;
+      // width: $fullHeight;
+      // height: $fullWidth;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background-color: $popUpBgColor;
+      border: 1px solid $popUpColor;
       &-Popup {
-          background-color: $popUpBgColor;
-          padding: 1.25rem;
-          border: 1px solid $popUpColor;
-          width: 80%;
-          max-width: 40.625rem;
-          text-align: center;
-          p, .Close-Popup {
-              font-size: $fontSizeSmall;
-          }
+        background-color: $popUpBgColor;
+        padding: 1.25rem;
+        //border: 1px solid $popUpColor;
+        width: 80%;
+        max-width: 40.625rem;
+        text-align: center;
+        p, .Close-Popup {
+          font-size: $fontSizeSmall;
+        }
       }
   }
   &-Header, &-Footer {
