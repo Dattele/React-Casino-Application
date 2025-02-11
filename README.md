@@ -27,7 +27,7 @@ The **BlackJack** game follows the standard rules:
 ## Installation & Setup
 
 1. **Clone the repository**: git clone https://github.com/Dattele/React-Casino-Application.git
-2. **Navigate to repository**: cd CasinoApp
+2. **Navigate to repository**: cd casino-application
 3. **Install dependencies**: npm install
 4. **Start the development server**: npm start
 
