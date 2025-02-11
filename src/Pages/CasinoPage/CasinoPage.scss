@@ -7,13 +7,19 @@
   &-Body {
     align-items: center;
     justify-content: center;
-    padding: 1rem 0rem;
+    padding: $spacer2;
     p {
       font-size: $fontSizeSmall;
       font-weight: bold;
     }
+    nav {
+      padding: $spacer2;
+    }
     &-Buttons {
       flex-direction: row;
     }
+  }
+  &-Image {
+    padding: $spacer2;
   }
 }

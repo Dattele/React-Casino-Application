@@ -13,30 +13,6 @@
 .Game {
   display: flex;
   flex-direction: column;
-  &-Body {
-      position: fixed;
-      z-index: 1;
-      left: 0;
-      top: 0;
-      // width: $fullHeight;
-      // height: $fullWidth;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      background-color: $popUpBgColor;
-      border: 1px solid $popUpColor;
-      &-Popup {
-        background-color: $popUpBgColor;
-        padding: 1.25rem;
-        //border: 1px solid $popUpColor;
-        width: 80%;
-        max-width: 40.625rem;
-        text-align: center;
-        p, .Close-Popup {
-          font-size: $fontSizeSmall;
-        }
-      }
-  }
   &-Header, &-Footer {
       flex-grow: 1;
       width: $fullWidth;
@@ -56,4 +32,10 @@
           }
       }
   }
+}
+
+.Button-Game-Footer {
+  margin: $spacer2 $spacer2 !important;
+  border: 2px solid $whiteColor !important;
+  border-radius: 0.75rem;
 }

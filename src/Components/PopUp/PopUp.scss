@@ -1,0 +1,33 @@
+@import '../../variables.scss';
+
+.Game-Body {
+  position: fixed;
+  z-index: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  border: 1px solid $whiteBorder;
+  &-Popup {
+    padding: 1.25rem;
+    width: 80%;
+    max-width: 40.625rem;
+    text-align: center;
+    .Result-Text {
+      font-size: $fontSizeSmall;
+    }
+    &-Buttons {
+      display: flex;
+      flex-direction: column;
+      .Button-Home {
+        margin-bottom: $spacer1;
+      }
+    }
+  }
+}
+
+.Game-Body, .Game-Body-Popup, .Game-Body-Popup-Buttons, .Result-Text {
+  background-color: $whiteSecondaryColor;
+}

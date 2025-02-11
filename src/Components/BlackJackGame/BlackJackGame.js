@@ -1,5 +1,9 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useCallback, useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { getDeck, reShuffle, drawCard, getBackOfCard, sleep } from '../../Apis/DeckOfCards';
+
+import PopUp from '../PopUp/PopUp';
+
 import './BlackJackGame.scss';
 
 export default function BlackJackGame() {
@@ -14,6 +18,19 @@ export default function BlackJackGame() {
   const [backOfCardURL, setBackOfCardURL] = useState('');
 
   const dealerTotalRef = useRef(dealerTotal);
+
+  const navigate = useNavigate();
+
+  // Function that navigates to home page
+  const handleHomeClick = () => {
+    navigate('/');
+  };
+
+  // Function for when user wants to play again
+  const handlePlayAgainClick = () => {
+    resetGame();
+    setUpGame();
+  };
 
    // Function to calculate the total value of a hand
   const calculateHandValue = (hand) => {
@@ -115,26 +132,41 @@ export default function BlackJackGame() {
       setIsPopupVisible(true);
   }
 
+  // Function for setting up the game
+  const setUpGame = useCallback(async () => {
+    const newDeckId = await getDeck();
+    await reShuffle(newDeckId);
+    setDeckId(newDeckId);
+
+    const initialDealerHand = await drawCard(newDeckId, 2);
+    const initialPlayerHand = await drawCard(newDeckId, 2);
+    const backURL = await getBackOfCard();
+    
+    setDealerHand(initialDealerHand);
+    setPlayerHand(initialPlayerHand);
+    setBackOfCardURL(backURL);
+
+    setPlayerTotal(calculateHandValue(initialPlayerHand));
+    setDealerTotal(calculateHandValue(initialDealerHand));
+  }, []);
+
   // Sets up the game
   useEffect(() => {
-    const setUpGame = async () => {
-      const newDeckId = await getDeck();
-      await reShuffle(newDeckId);
-      setDeckId(newDeckId);
-
-      const initialDealerHand = await drawCard(newDeckId, 2);
-      const initialPlayerHand = await drawCard(newDeckId, 2);
-      const backURL = await getBackOfCard();
-      
-      setDealerHand(initialDealerHand);
-      setPlayerHand(initialPlayerHand);
-      setBackOfCardURL(backURL);
-
-      setPlayerTotal(calculateHandValue(initialPlayerHand));
-      setDealerTotal(calculateHandValue(initialDealerHand));
-    };
     setUpGame();
-  }, []);
+  }, [setUpGame]);
+
+  // Resets the game
+  const resetGame = () => {
+    setDeckId(null);
+    setDealerHand([]);
+    setPlayerHand([]);
+    setDealerTotal(0);
+    setPlayerTotal(0);
+    setShowDealersTotal(false);
+    setResult('');
+    setIsPopupVisible(false);
+    setBackOfCardURL('');
+  }
 
   return (
     <div className="Wrapper-Bg">
@@ -152,17 +184,9 @@ export default function BlackJackGame() {
               {showDealersTotal && <p>Total: {dealerTotal}</p>}
             </div>
           </div>
-          {isPopupVisible && (
-            <div className="Game-Body">
-              <div className="Game-Body-Popup">
-                <p className="Result-Text">{result}</p>            
-                <div className="Game-Body-Popup-Buttons">
-                  <button className="Button Button-Home">Home</button>
-                  <button className="Button Button-Play">Play Again</button>
-                </div>
-              </div>
-            </div>
-           )}
+          {isPopupVisible && 
+            <PopUp result={result} onHome={handleHomeClick} onPlayAgain={handlePlayAgainClick} />
+          }
           <div className="Game Game-Footer">
             <div className="Game Game-Footer Game-Footer-Text">
               <h2>Player's Hand</h2>
@@ -174,8 +198,8 @@ export default function BlackJackGame() {
               <p>Total: {playerTotal}</p>
             </div>
             <div className="Game Game-Footer Game-Footer-Buttons">
-              <button onClick={handleHit}>Hit</button>
-              <button onClick={handleStand}>Stand</button>
+              <button className='Button Button-Game-Footer' onClick={handleHit}>Hit</button>
+              <button className='Button Button-Game-Footer' onClick={handleStand}>Stand</button>
             </div>
           </div>
         </main>

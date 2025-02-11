@@ -19,17 +19,7 @@
   max-width: 45rem;
 }
 
-.Hide {
-  display: none;
-}
-
-.Show {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-button {
+button, a {
   cursor: pointer;
 }
 
@@ -39,14 +29,15 @@ button {
   color: $buttonTextColor;
   border: none;
   height: 3rem;
-  padding: 0rem 1rem;
-  margin: 1rem 0.5rem;
+  padding: $spacer1 $spacer2;
+  //margin: 1rem 0.5rem;
   transition: background-color 0.33s ease;
+  text-decoration: none;
   &:hover, &:focus {
-      background-color: $buttonColorHover;
+    background-color: $buttonColorHover;
   }
   &-Home, &-Go-Back {
-      margin: 0;
+    margin: $spacer0;
   }
 }
 

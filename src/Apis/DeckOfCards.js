@@ -25,6 +25,20 @@ export async function getBackOfCard() {
   return response.url;
 }
 
+// Gets the specified card image and adds it to cardImage
+export async function getSpecificCard(cardCode) {
+  try {
+    const deckId = await getDeck();
+    const drawAll = await fetch(`https://deckofcardsapi.com/api/deck/${deckId}/draw/?count=52`);
+    const drawAllJson = await drawAll.json();
+    const findCard = drawAllJson.cards.find(card => card.code === cardCode);
+    console.log(findCard);
+    return findCard;
+  } catch (error) {
+    console.error("Error fetching the card:", error);
+  }
+}
+
 // Sets a timeout to wait before performing any other actions
 export function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
