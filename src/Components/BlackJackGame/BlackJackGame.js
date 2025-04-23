@@ -1,4 +1,4 @@
-import React, { useCallback, useState, useEffect, useRef } from 'react';
+import React, { useCallback, useEffect, useRef, useReducer } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getDeck, reShuffle, drawCard, getBackOfCard, sleep } from '../../Apis/DeckOfCards';
 
@@ -7,17 +7,116 @@ import PopUp from '../PopUp/PopUp';
 import './BlackJackGame.scss';
 
 export default function BlackJackGame() {
-  const [deckId, setDeckId] = useState(null);
-  const [dealerHand, setDealerHand] = useState([]);
-  const [playerHand, setPlayerHand] = useState([]);
-  const [dealerTotal, setDealerTotal] = useState(0);
-  const [playerTotal, setPlayerTotal] = useState(0);
-  const [showDealersTotal, setShowDealersTotal] = useState(false);
-  const [result, setResult] = useState('');
-  const [isPopupVisible, setIsPopupVisible] = useState(false);
-  const [backOfCardURL, setBackOfCardURL] = useState('');
+  // Function to calculate the total value of a hand
+  const calculateHandValue = (hand) => {
+    let aceCount = 0;
+    const handValue = hand.reduce((total, card) => {
+      if (card.value === "ACE") {
+        aceCount++;
+        return total + 11;
+      } else if (["JACK", "QUEEN", "KING"].includes(card.value)) {
+        return total + 10;
+      } else {
+        return total + Number(card.value);
+      }
+    }, 0);
 
-  const dealerTotalRef = useRef(dealerTotal);
+    let adjustedValue = handValue;
+    while (adjustedValue > 21 && aceCount > 0) {
+      adjustedValue -= 10;
+      aceCount--;
+    }
+
+    return adjustedValue;
+  };
+
+  const initialState = {
+    deckId: null,
+    dealerHand: [],
+    playerHand: [],
+    dealerTotal: 0,
+    playerTotal: 0,
+    showDealersTotal: false,
+    result: '',
+    isPopupVisible: false,
+    backOfCardURL: '',
+  }
+
+  const BlackJackReducer = (state, action) => {
+    switch (action.type) {
+      case 'HANDLE_HIT': {
+        const { newCard, updatedHand, newTotal } = action.payload;
+        return {
+          ...state,
+          playerHand: updatedHand,
+          playerTotal: newTotal,
+        }
+      }
+      case 'HANDLE_STAND': {
+        return {
+          ...state,
+          showDealersTotal: true,
+        }
+      }
+      case 'SET_DEALER_HAND': {
+        const { newCard, updatedHand, newTotal } = action.payload;
+
+        return {
+          ...state,
+          dealerHand: updatedHand,
+          dealerTotal: newTotal,
+        }
+      }
+      case 'SET_RESULT': {
+        const { result } = action.payload;
+        return {
+          ...state,
+          gameResult: result,
+          isPopupVisible: true,
+        }
+      }
+      case 'SET_UP_GAME': {
+        const {
+          newDeckId,
+          initialDealerHand,
+          initialPlayerHand,
+          backURL,
+          playerStartTotal,
+          dealerStartTotal
+        } = action.payload;
+
+        return {
+          ...state,
+          deckId: newDeckId,
+          dealerHand: initialDealerHand,
+          playerHand: initialPlayerHand,
+          backOfCardURL: backURL,
+          playerTotal: playerStartTotal,
+          dealerTotal: dealerStartTotal,
+        }
+      }
+      case 'RESET_GAME': {
+        return {
+          deckId: null,
+          dealerHand: [],
+          playerHand: [],
+          dealerTotal: 0,
+          playerTotal: 0,
+          showDealersTotal: false,
+          result: '',
+          isPopupVisible: false,
+          backOfCardURL: '',
+        }
+      }
+      default: {
+        return state;
+      }
+    }
+  }
+
+  const [state, dispatch] = useReducer(BlackJackReducer, {
+    ...initialState,
+  });
 
   const navigate = useNavigate();
 
@@ -32,37 +131,14 @@ export default function BlackJackGame() {
     setUpGame();
   };
 
-   // Function to calculate the total value of a hand
-  const calculateHandValue = (hand) => {
-    let handValue = 0;
-    let aceCount = 0;
-    hand.forEach(card => {
-      if (card.value === "ACE") {
-        aceCount++;
-        handValue += 11;
-      } else if (["JACK", "QUEEN", "KING"].includes(card.value)) {
-        handValue += 10;
-      } else {
-        handValue += +card.value;
-      }
-    });
-
-    while (handValue > 21 && aceCount > 0) {
-      handValue -= 10;
-      aceCount--;
-    }
-
-    return handValue;
-  };
-
   // Function for setting up the player and dealers hands
   const renderHand = (hand, isDealer) => {
     return hand.map((card, index) => (
       <img
         key={index}
-        src={isDealer && index === 1 && !showDealersTotal ? backOfCardURL : card.image}
-        alt={isDealer && index === 1 && !showDealersTotal ? 'Back of Card' : card.code}
-        className={isDealer && index === 1 && !showDealersTotal ? 'hidden-card' : 'visible-card'}
+        src={isDealer && index === 1 && !state.showDealersTotal ? state.backOfCardURL : card.image}
+        alt={isDealer && index === 1 && !state.showDealersTotal ? 'Back of Card' : card.code}
+        className={isDealer && index === 1 && !state.showDealersTotal ? 'hidden-card' : 'visible-card'}
       />
     ));
   };
@@ -72,82 +148,71 @@ export default function BlackJackGame() {
    * and add it to his hand & score
    */
   const handleHit = async () => {
-    const currentTotal = playerTotal;
+    console.log('player total before hit', state.playerTotal);
+    const currentTotal = state.playerTotal;
     if (currentTotal < 22) {
-      const newCard = await drawCard(deckId, 1);
-      setPlayerHand((prevHand) => [...prevHand, ...newCard]);
-      setPlayerTotal(calculateHandValue([...playerHand, ...newCard]));
-    } else {
-      alert("Your current score is over 21. You must stand.");
-    }
+      const newCard = await drawCard(state.deckId, 1);
+      const updatedHand = [...state.playerHand, ...newCard];
+      const newTotal = calculateHandValue(updatedHand); 
+
+      dispatch({
+        type: 'HANDLE_HIT',
+        payload: { newCard, updatedHand, newTotal },
+      })
+
+      await sleep(1000);
+      if (newTotal > 20) {
+        handleStand();
+      }
+    } 
   };
 
   // Handle the user hitting the stand button
   const handleStand = () => {
-    setShowDealersTotal(true);
-    dealerMoves();
+    // setShowDealersTotal(true);
+    dispatch({
+      type: 'HANDLE_STAND',
+    })
   };
-
-  /* Perform the moves for the dealer
-     * Dealer doesn't draw if hand is at 17 or above, or if player busts
-     * Draw a card until the dealer's total reaches 17
-     */
-  const dealerMoves = async () => {
-    dealerTotalRef.current = dealerTotal;
-    while (dealerTotalRef.current < 17 && playerTotal <= 21) {
-      const newCard = await drawCard(deckId, 1);
-      await sleep(1000);
-      setDealerHand((prevHand) => {
-        const updatedHand = [...prevHand, ...newCard];
-        const newTotal = calculateHandValue(updatedHand);
-        setDealerTotal(newTotal);
-        dealerTotalRef.current = newTotal;
-        return updatedHand;
-      });
-
-      await sleep(1000);
-    }
-
-    await sleep(1000);
-    determineWinner();
-  }
 
   //Determines who the winner of the game is
   const determineWinner = () => {
       let gameResult;
 
-      if (playerTotal > 21) {
-          gameResult = `Player busts, Dealer wins with the score ${dealerTotal}!`;
-      } else if (dealerTotal > 21) {
-          gameResult = `Dealer busts, Player wins with the score ${playerTotal}!`;
-      } else if (playerTotal > dealerTotal) {
-          gameResult = `Player wins with the score ${playerTotal}!`;
-      } else if (playerTotal === dealerTotal) {
-          gameResult = "Sorry the house wins on draws.. Better luck next time Loser!!"
+      if (state.playerTotal > 21) {
+          gameResult = `Player busts, Dealer wins with the score ${state.dealerTotal}!`;
+      } else if (state.dealerTotal > 21) {
+          gameResult = `Dealer busts, Player wins with the score ${state.playerTotal}!`;
+      } else if (state.playerTotal > state.dealerTotal) {
+          gameResult = `Player wins with the score ${state.playerTotal}!`;
+      } else if (state.playerTotal === state.dealerTotal) {
+          gameResult = "Tie Game! Take your chips back."
       } else {
-          gameResult = `Dealer wins with the score ${dealerTotal}!`;
+          gameResult = `Dealer wins with the score ${state.dealerTotal}!`;
       }
 
-      setResult(gameResult);
-      setIsPopupVisible(true);
+      dispatch({
+        type: 'SET_RESULT',
+        payload: { gameResult },
+      })
   }
 
   // Function for setting up the game
   const setUpGame = useCallback(async () => {
     const newDeckId = await getDeck();
     await reShuffle(newDeckId);
-    setDeckId(newDeckId);
 
     const initialDealerHand = await drawCard(newDeckId, 2);
     const initialPlayerHand = await drawCard(newDeckId, 2);
     const backURL = await getBackOfCard();
-    
-    setDealerHand(initialDealerHand);
-    setPlayerHand(initialPlayerHand);
-    setBackOfCardURL(backURL);
 
-    setPlayerTotal(calculateHandValue(initialPlayerHand));
-    setDealerTotal(calculateHandValue(initialDealerHand));
+    const playerStartTotal = calculateHandValue(initialPlayerHand);
+    const dealerStartTotal = calculateHandValue(initialDealerHand);
+
+    dispatch({
+      type: 'SET_UP_GAME',
+      payload: { newDeckId, initialDealerHand, initialPlayerHand, backURL, playerStartTotal, dealerStartTotal },
+    })
   }, []);
 
   // Sets up the game
@@ -155,17 +220,43 @@ export default function BlackJackGame() {
     setUpGame();
   }, [setUpGame]);
 
+  /* Perform the moves for the dealer
+   * Dealer doesn't draw if hand is at 17 or above, or if player busts
+   * Draw a card until the dealer's total reaches 17
+   */
+  useEffect(() => {
+    if (state.showDealersTotal) {
+      const dealerMoves = async () => {
+        let updatedHand = [...state.dealerHand];
+        let newTotal = state.dealerTotal;
+        console.log('dealers newTotal', newTotal);
+        console.log('dealers player total', state.playerTotal);
+
+        while (newTotal < 17 && state.playerTotal <= 21) {
+          const newCard = await drawCard(state.deckId, 1);
+          updatedHand = [...updatedHand, ...newCard];
+          newTotal = calculateHandValue(updatedHand);
+          await sleep(1000);
+
+          dispatch({
+            type: 'SET_DEALER_HAND',
+            payload: { newCard, updatedHand, newTotal },
+          })
+
+          await sleep(1000);
+        }
+      }
+
+      dealerMoves();
+      determineWinner();
+    }
+  }, [state.showDealersTotal])
+
   // Resets the game
   const resetGame = () => {
-    setDeckId(null);
-    setDealerHand([]);
-    setPlayerHand([]);
-    setDealerTotal(0);
-    setPlayerTotal(0);
-    setShowDealersTotal(false);
-    setResult('');
-    setIsPopupVisible(false);
-    setBackOfCardURL('');
+    dispatch({
+      type: 'RESET_GAME'
+    })
   }
 
   return (
@@ -178,24 +269,24 @@ export default function BlackJackGame() {
               <h2>Dealer's Hand</h2>
             </div>
             <div className="Game Game-Header Game-Header-Images">
-              {renderHand(dealerHand, true)}
+              {renderHand(state.dealerHand, true)}
             </div>
             <div className="Game Game-Header Game-Header-Text">
-              {showDealersTotal && <p>Total: {dealerTotal}</p>}
+              {state.showDealersTotal && <p>Total: {state.dealerTotal}</p>}
             </div>
           </div>
-          {isPopupVisible && 
-            <PopUp result={result} onHome={handleHomeClick} onPlayAgain={handlePlayAgainClick} />
+          {state.isPopupVisible && 
+            <PopUp result={state.result} onHome={handleHomeClick} onPlayAgain={handlePlayAgainClick} />
           }
           <div className="Game Game-Footer">
             <div className="Game Game-Footer Game-Footer-Text">
               <h2>Player's Hand</h2>
             </div>
             <div className="Game Game-Footer Game-Footer-Images">
-              {renderHand(playerHand, false)}
+              {renderHand(state.playerHand, false)}
             </div>
             <div className="Game Game-Header Game-Header-Text">
-              <p>Total: {playerTotal}</p>
+              <p>Total: {state.playerTotal}</p>
             </div>
             <div className="Game Game-Footer Game-Footer-Buttons">
               <button className='Button Button-Game-Footer' onClick={handleHit}>Hit</button>

@@ -38,7 +38,7 @@ The **BlackJack** game follows the standard rules:
 3. Choose Hit to draw a card or Stand to keep your hand
 4. The dealer plays based on the standard rules
 5. The winner gets determined by comparing the two hands
-6. In the case of both players having the same total, the dealer wins
+6. In the case of both players having the same total, it is a tie
 
 ## Planned Features
 1. Roulette
