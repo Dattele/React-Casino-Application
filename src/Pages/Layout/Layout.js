@@ -4,6 +4,7 @@ export default function Layout() {
   return (
     <nav>
       <Link to="/BlackJack" className="Button">BlackJack</Link>
+      <Link to='/Roulette' className='Button'>Roulette</Link>
     </nav>
   )
 }
