@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useReducer } from 'react';
+import React, { useCallback, useEffect, useReducer } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getDeck, reShuffle, drawCard, getBackOfCard, sleep } from '../../Apis/DeckOfCards';
 
@@ -45,7 +45,7 @@ export default function BlackJackGame() {
   const BlackJackReducer = (state, action) => {
     switch (action.type) {
       case 'HANDLE_HIT': {
-        const { newCard, updatedHand, newTotal } = action.payload;
+        const { updatedHand, newTotal } = action.payload;
         return {
           ...state,
           playerHand: updatedHand,
@@ -59,7 +59,7 @@ export default function BlackJackGame() {
         }
       }
       case 'SET_DEALER_HAND': {
-        const { newCard, updatedHand, newTotal } = action.payload;
+        const { updatedHand, newTotal } = action.payload;
 
         return {
           ...state,
@@ -68,10 +68,10 @@ export default function BlackJackGame() {
         }
       }
       case 'SET_RESULT': {
-        const { result } = action.payload;
+        const { gameResult } = action.payload;
         return {
           ...state,
-          gameResult: result,
+          result: gameResult,
           isPopupVisible: true,
         }
       }
@@ -169,32 +169,32 @@ export default function BlackJackGame() {
 
   // Handle the user hitting the stand button
   const handleStand = () => {
-    // setShowDealersTotal(true);
     dispatch({
       type: 'HANDLE_STAND',
     })
   };
 
   //Determines who the winner of the game is
-  const determineWinner = () => {
-      let gameResult;
+  const determineWinner = (playerTotal, dealerTotal) => {
+    let gameResult;
+    console.log('player total', playerTotal);
+    console.log('dealer total', dealerTotal);
+    if (playerTotal > 21) {
+        gameResult = `Player busts, Dealer wins with the score ${dealerTotal}!`;
+    } else if (dealerTotal > 21) {
+        gameResult = `Dealer busts, Player wins with the score ${playerTotal}!`;
+    } else if (playerTotal > dealerTotal) {
+        gameResult = `Player wins with the score ${playerTotal}!`;
+    } else if (playerTotal === dealerTotal) {
+        gameResult = "Tie Game! Take your chips back."
+    } else {
+        gameResult = `Dealer wins with the score ${dealerTotal}!`;
+    }
 
-      if (state.playerTotal > 21) {
-          gameResult = `Player busts, Dealer wins with the score ${state.dealerTotal}!`;
-      } else if (state.dealerTotal > 21) {
-          gameResult = `Dealer busts, Player wins with the score ${state.playerTotal}!`;
-      } else if (state.playerTotal > state.dealerTotal) {
-          gameResult = `Player wins with the score ${state.playerTotal}!`;
-      } else if (state.playerTotal === state.dealerTotal) {
-          gameResult = "Tie Game! Take your chips back."
-      } else {
-          gameResult = `Dealer wins with the score ${state.dealerTotal}!`;
-      }
-
-      dispatch({
-        type: 'SET_RESULT',
-        payload: { gameResult },
-      })
+    dispatch({
+      type: 'SET_RESULT',
+      payload: { gameResult },
+    })
   }
 
   // Function for setting up the game
@@ -226,9 +226,10 @@ export default function BlackJackGame() {
    */
   useEffect(() => {
     if (state.showDealersTotal) {
+      let newTotal = state.dealerTotal;
+
       const dealerMoves = async () => {
         let updatedHand = [...state.dealerHand];
-        let newTotal = state.dealerTotal;
         console.log('dealers newTotal', newTotal);
         console.log('dealers player total', state.playerTotal);
 
@@ -242,13 +243,13 @@ export default function BlackJackGame() {
             type: 'SET_DEALER_HAND',
             payload: { newCard, updatedHand, newTotal },
           })
-
-          await sleep(1000);
         }
+
+        await sleep(1000);
+        determineWinner(state.playerTotal, newTotal);
       }
 
       dealerMoves();
-      determineWinner();
     }
   }, [state.showDealersTotal])
 
