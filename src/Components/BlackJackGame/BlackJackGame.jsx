@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useReducer } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getDeck, reShuffle, drawCard, getBackOfCard, sleep } from '../../Apis/DeckOfCards';
+import Balance from '../Balance';
 
 import PopUp from '../PopUp/PopUp';
 
@@ -143,6 +144,39 @@ export default function BlackJackGame() {
     ));
   };
 
+   /* Handle the dealer logic
+   * Dealer doesn't draw if hand is at 17 or above, or if player busts
+   * Draw a card until the dealer's total reaches 17
+   */
+  const handleDealer = async () => {
+    if (state.showDealersTotal) {
+      let newTotal = state.dealerTotal;
+
+      const dealerMoves = async () => {
+        let updatedHand = [...state.dealerHand];
+        console.log('dealers newTotal', newTotal);
+        console.log('dealers player total', state.playerTotal);
+
+        while (newTotal < 17 && state.playerTotal <= 21) {
+          const newCard = await drawCard(state.deckId, 1);
+          updatedHand = [...updatedHand, ...newCard];
+          newTotal = calculateHandValue(updatedHand);
+          await sleep(1000);
+
+          dispatch({
+            type: 'SET_DEALER_HAND',
+            payload: { newCard, updatedHand, newTotal },
+          })
+        }
+
+        await sleep(1000);
+        determineWinner(state.playerTotal, newTotal);
+      }
+
+      dealerMoves();
+    }
+  }
+
   /* Handle the user hitting the hit button
    * If the user's score is under 22, draw a card 
    * and add it to his hand & score
@@ -168,10 +202,13 @@ export default function BlackJackGame() {
   };
 
   // Handle the user hitting the stand button
+  // Dealer then plays if player did not bust
   const handleStand = () => {
     dispatch({
       type: 'HANDLE_STAND',
     })
+    console.log('showDealersTotal', state.showDealersTotal);
+    handleDealer();
   };
 
   //Determines who the winner of the game is
@@ -215,44 +252,6 @@ export default function BlackJackGame() {
     })
   }, []);
 
-  // Sets up the game
-  useEffect(() => {
-    setUpGame();
-  }, [setUpGame]);
-
-  /* Perform the moves for the dealer
-   * Dealer doesn't draw if hand is at 17 or above, or if player busts
-   * Draw a card until the dealer's total reaches 17
-   */
-  useEffect(() => {
-    if (state.showDealersTotal) {
-      let newTotal = state.dealerTotal;
-
-      const dealerMoves = async () => {
-        let updatedHand = [...state.dealerHand];
-        console.log('dealers newTotal', newTotal);
-        console.log('dealers player total', state.playerTotal);
-
-        while (newTotal < 17 && state.playerTotal <= 21) {
-          const newCard = await drawCard(state.deckId, 1);
-          updatedHand = [...updatedHand, ...newCard];
-          newTotal = calculateHandValue(updatedHand);
-          await sleep(1000);
-
-          dispatch({
-            type: 'SET_DEALER_HAND',
-            payload: { newCard, updatedHand, newTotal },
-          })
-        }
-
-        await sleep(1000);
-        determineWinner(state.playerTotal, newTotal);
-      }
-
-      dealerMoves();
-    }
-  }, [state.showDealersTotal])
-
   // Resets the game
   const resetGame = () => {
     dispatch({
@@ -260,9 +259,15 @@ export default function BlackJackGame() {
     })
   }
 
+    // Sets up the game
+    useEffect(() => {
+      setUpGame();
+    }, [setUpGame]);
+
   return (
     <div className="Wrapper-Bg">
       <div className="Wrapper">
+        <Balance balance={0} />
         <main className="Game">
           <h1>BlackJack</h1>
           <div className='Game Game-Header'>

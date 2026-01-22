@@ -16,7 +16,9 @@
 }
 
 .Wrapper {
-  max-width: 45rem;
+  // max-width: 45rem;
+  width: 100%;
+  display: flex;
 }
 
 button, a {
