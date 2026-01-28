@@ -149,32 +149,30 @@ export default function BlackJackGame() {
    * Draw a card until the dealer's total reaches 17
    */
   const handleDealer = async () => {
-    if (state.showDealersTotal) {
-      let newTotal = state.dealerTotal;
+    let newTotal = state.dealerTotal;
 
-      const dealerMoves = async () => {
-        let updatedHand = [...state.dealerHand];
-        console.log('dealers newTotal', newTotal);
-        console.log('dealers player total', state.playerTotal);
+    const dealerMoves = async () => {
+      let updatedHand = [...state.dealerHand];
+      console.log('dealers newTotal', newTotal);
+      console.log('dealers player total', state.playerTotal);
 
-        while (newTotal < 17 && state.playerTotal <= 21) {
-          const newCard = await drawCard(state.deckId, 1);
-          updatedHand = [...updatedHand, ...newCard];
-          newTotal = calculateHandValue(updatedHand);
-          await sleep(1000);
+      while (newTotal < 17 && state.playerTotal <= 21) {
+        const newCard = await drawCard(state.deckId, 1);
+        updatedHand = [...updatedHand, ...newCard];
+        newTotal = calculateHandValue(updatedHand);
+        await sleep(2000);
 
-          dispatch({
-            type: 'SET_DEALER_HAND',
-            payload: { newCard, updatedHand, newTotal },
-          })
-        }
-
-        await sleep(1000);
-        determineWinner(state.playerTotal, newTotal);
+        dispatch({
+          type: 'SET_DEALER_HAND',
+          payload: { newCard, updatedHand, newTotal },
+        })
       }
 
-      dealerMoves();
+      await sleep(1000);
+      determineWinner(state.playerTotal, newTotal);
     }
+
+    dealerMoves();
   }
 
   /* Handle the user hitting the hit button
@@ -207,7 +205,7 @@ export default function BlackJackGame() {
     dispatch({
       type: 'HANDLE_STAND',
     })
-    console.log('showDealersTotal', state.showDealersTotal);
+
     handleDealer();
   };
 
@@ -268,7 +266,7 @@ export default function BlackJackGame() {
     <div className="Wrapper-Bg">
       <div className="Wrapper">
         <Balance balance={0} />
-        <main className="Game">
+        <main className="Game Game-Wrapper">
           <h1>BlackJack</h1>
           <div className='Game Game-Header'>
             <div className="Game Game-Header Game-Header-Text">

@@ -33,15 +33,23 @@
       }
   }
   h1 {
+    font-size: 3rem;
     align-self: center;
+    margin: 0rem;
   }
   img {
     max-height: 250px;
   }
 }
 
+.Game-Wrapper {
+  @media (min-width: 42rem) {
+    order: 2;
+  }
+}
+
 .Button-Game-Footer {
-  margin: $spacer2 $spacer2 !important;
+  margin: $spacer0 $spacer2 !important;
   border: 2px solid $whiteColor !important;
   border-radius: 0.75rem;
 }
