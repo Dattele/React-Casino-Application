@@ -1,1 +1,1 @@
-export { default } from "./BlackJackPage";
+export { default } from './BlackJackPage';

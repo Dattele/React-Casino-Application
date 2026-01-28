@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from "react";
-import { Helmet } from "react-helmet";
+import React, { useState, useEffect } from 'react';
+import { Helmet } from 'react-helmet';
 import { getSpecificCard } from '../../Apis/DeckOfCards';
 
-import Layout from "../Layout";
+import Layout from '../Layout';
 
 import './CasinoPage.scss';
 
@@ -13,7 +13,7 @@ export default function CasinoPage() {
     const fetchImage = async () => {
       try {
         const jackImage = await getSpecificCard('JS');
-        
+
         setImage({
           src: jackImage.image,
           alt: `${jackImage.value} Of ${jackImage.suit}`,
@@ -31,11 +31,11 @@ export default function CasinoPage() {
       <Helmet>
         <title>Casino</title>
       </Helmet>
-      <main className="Card">
-        <div className="Card Card-Body">
+      <main className='Card'>
+        <div className='Card Card-Body'>
           <h1>Logan's Casino</h1>
           <Layout />
-          <img className="Card-Image" src={image.src} alt={image.alt} />
+          <img className='Card-Image' src={image.src} alt={image.alt} />
         </div>
       </main>
     </>

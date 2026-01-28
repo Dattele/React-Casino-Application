@@ -16,20 +16,23 @@ export default function RouletteWheel({ onResult }) {
     setSpinning(true);
     const targetIndex = Math.floor(Math.random() * NUMBERS);
     const segmentAngle = 360 / WheelNumbers.length;
-    const stopAngle = 360 - targetIndex * segmentAngle; 
+    const stopAngle = 360 - targetIndex * segmentAngle;
     const spinCount = 5;
     const finalRotation = 360 * spinCount + stopAngle;
     const duration = 4000;
 
     // Add class to rotate Ball
-    ballRef.current.style.transform = `rotate(0deg) translateX(0px)`; 
+    ballRef.current.style.transform = `rotate(0deg) translateX(0px)`;
     //ballRef.current.style.animation = `none`;
     //ballRef.current.offsetHeight // force reflow
-    ballRef.current.style.setProperty('--final-rotation', `${finalRotation}deg`);
+    ballRef.current.style.setProperty(
+      '--final-rotation',
+      `${finalRotation}deg`,
+    );
     ballRef.current.classList.add('Ball-Spin');
 
-    console.log("Final rotation set to:", finalRotation);
-    console.log("Ball classes:", ballRef.current.className);
+    console.log('Final rotation set to:', finalRotation);
+    console.log('Ball classes:', ballRef.current.className);
 
     setTimeout(() => {
       ballRef.current.classList.remove('Ball-Spin');
@@ -41,14 +44,14 @@ export default function RouletteWheel({ onResult }) {
   };
 
   return (
-    <div className="Wheel-Container">
-      <div className="Wheel-Wrapper">
-        <svg width="400" height="400" viewBox="0 0 400 400">
+    <div className='Wheel-Container'>
+      <div className='Wheel-Wrapper'>
+        <svg width='400' height='400' viewBox='0 0 400 400'>
           {/* Border ring */}
-          <circle cx="200" cy="200" r="190" fill="#222" />
+          <circle cx='200' cy='200' r='190' fill='#222' />
 
           {/* Segments */}
-          <g ref={wheelRef} transform="rotate(0)" className="Wheel">
+          <g ref={wheelRef} transform='rotate(0)' className='Wheel'>
             {WheelNumbers.map((segment, i) => {
               const startAngle = i * ANGLE;
               const endAngle = startAngle + ANGLE;
@@ -60,15 +63,20 @@ export default function RouletteWheel({ onResult }) {
 
               return (
                 <g key={segment.number}>
-                  <path d={path} fill={segment.color} stroke="#111" strokeWidth="1" />
+                  <path
+                    d={path}
+                    fill={segment.color}
+                    stroke='#111'
+                    strokeWidth='1'
+                  />
                   <text
                     x={labelX}
                     y={labelY}
-                    textAnchor="middle"
-                    alignmentBaseline="middle"
-                    fontSize="12"
-                    fontWeight="bold"
-                    fill="white"
+                    textAnchor='middle'
+                    alignmentBaseline='middle'
+                    fontSize='12'
+                    fontWeight='bold'
+                    fill='white'
                     transform={`rotate(${midAngle}, ${labelX}, ${labelY})`}
                   >
                     {segment.number}
@@ -79,13 +87,13 @@ export default function RouletteWheel({ onResult }) {
           </g>
 
           {/* Inner hub */}
-          <circle cx="200" cy="200" r="30" fill="#111" />
+          <circle cx='200' cy='200' r='30' fill='#111' />
         </svg>
 
-        <div className="Ball" ref={ballRef}></div>
+        <div className='Ball' ref={ballRef}></div>
       </div>
 
-      <button className="Button Button-Spin" onClick={spin} disabled={spinning}>
+      <button className='Button Button-Spin' onClick={spin} disabled={spinning}>
         {spinning ? 'Spinning...' : 'Spin'}
       </button>
     </div>

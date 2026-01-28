@@ -29,7 +29,8 @@
   }
 }
 
-button, a {
+button,
+a {
   cursor: pointer;
 }
 
@@ -43,10 +44,12 @@ button, a {
   //margin: 1rem 0.5rem;
   transition: background-color 0.33s ease;
   text-decoration: none;
-  &:hover, &:focus {
+  &:hover,
+  &:focus {
     background-color: $buttonColorHover;
   }
-  &-Home, &-Go-Back {
+  &-Home,
+  &-Go-Back {
     margin: $spacer0;
   }
 }

@@ -5,14 +5,18 @@ Welcome to the **Casino Application**! This project is now built using **React**
 ## Features
 
 ### Landing Page
+
 The landing page lists the following games:
+
 - **BlackJack** (fully functional)
 - **Roulette** (coming soon)
 - **Texas Hold'em** (coming soon)
 - **Slot Machines** (coming soon)
 
 ### BlackJack Game
+
 The **BlackJack** game follows the standard rules:
+
 - The player competes against a **CPU dealer**.
 - The objective is to get as close as possible to **21** without exceeding it.
 - The game includes:
@@ -41,15 +45,18 @@ The **BlackJack** game follows the standard rules:
 6. In the case of both players having the same total, it is a tie
 
 ## Planned Features
+
 1. Roulette
 2. Texas Hold'em
 3. Slot Machines
 
 ## Future Enhancements
+
 1. Improved animations
 2. Sound effects
 3. Give Players customization options
 
 ## Announcements
+
 1. The project has been migrated to React for a more maintainable codebase
 2. Future updates will focus on enhancing gameplay features, UI improvements, and additional games

@@ -1,7 +1,7 @@
-import React from "react";
-import { Helmet } from "react-helmet";
+import React from 'react';
+import { Helmet } from 'react-helmet';
 
-import BlackJackGame from "../../Components/BlackJackGame";
+import BlackJackGame from '../../Components/BlackJackGame';
 
 import './BlackJackPage.scss';
 

@@ -1,1 +1,1 @@
-export { default } from "./CasinoPage";
+export { default } from './CasinoPage';

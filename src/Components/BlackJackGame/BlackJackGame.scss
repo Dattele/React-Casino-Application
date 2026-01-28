@@ -5,32 +5,33 @@
   align-items: center;
   justify-content: center;
   &-Buttons {
-      display: flex;
-      flex-direction: row;
+    display: flex;
+    flex-direction: row;
   }
 }
 
 .Game {
   display: flex;
   flex-direction: column;
-  &-Header, &-Footer {
-      flex-grow: 1;
-      width: $fullWidth;
-      align-items: center;
-      justify-content: center;
-      &-Images {
-          flex-direction: row;
-          flex-wrap: wrap;
+  &-Header,
+  &-Footer {
+    flex-grow: 1;
+    width: $fullWidth;
+    align-items: center;
+    justify-content: center;
+    &-Images {
+      flex-direction: row;
+      flex-wrap: wrap;
+    }
+    &-Buttons {
+      flex-direction: row;
+    }
+    &-Text {
+      p {
+        font-size: $fontSizeSmall;
+        font-weight: bold;
       }
-      &-Buttons {
-          flex-direction: row;
-      }
-      &-Text {
-          p {
-              font-size: $fontSizeSmall;
-              font-weight: bold;
-          }
-      }
+    }
   }
   h1 {
     font-size: 3rem;
