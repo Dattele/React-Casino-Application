@@ -6,7 +6,7 @@ import CasinoPage from './Pages/CasinoPage';
 import BlackJackPage from './Pages/BlackJackPage';
 import RoulettePage from './Pages/RoulettePage';
 
-import './All.scss';
+import './all.scss';
 import './App.scss';
 
 function App() {
