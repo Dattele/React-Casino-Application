@@ -10,13 +10,13 @@ import {
 
 import Balance from '../Balance';
 import Chips from '../Chips';
-import { useBalance } from '../../Context/BalanceContext';
+// import { useBalance } from '../../Context/BalanceContext';
 import PopUp from '../PopUp/PopUp';
 
 import './BlackJackGame.scss';
 
 export default function BlackJackGame() {
-  const { add, subtract } = useBalance();
+  // const { add, subtract } = useBalance();
 
   // Function to calculate the total value of a hand
   const calculateHandValue = (hand) => {
@@ -287,9 +287,9 @@ export default function BlackJackGame() {
   };
 
   // Sets up the game
-  // useEffect(() => {
-  //   setUpGame();
-  // }, [setUpGame]);
+  useEffect(() => {
+    setUpGame();
+  }, [setUpGame]);
 
   return (
     <div className='Wrapper-Bg'>
