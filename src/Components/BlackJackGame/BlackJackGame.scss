@@ -49,6 +49,17 @@
   }
 }
 
+.Side-Wrapper {
+  order: 2;
+  @media (min-width: 42rem) {
+    order: 1;
+  }
+
+  .Chips-Wrapper {
+    margin-top: 2rem;
+  }
+}
+
 .Button-Game-Footer {
   margin: $spacer0 $spacer2 !important;
   border: 2px solid $whiteColor !important;

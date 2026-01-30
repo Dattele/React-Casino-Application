@@ -7,13 +7,17 @@ import {
   getBackOfCard,
   sleep,
 } from '../../Apis/DeckOfCards';
-import Balance from '../Balance';
 
+import Balance from '../Balance';
+import Chips from '../Chips';
+import { useBalance } from '../../Context/BalanceContext';
 import PopUp from '../PopUp/PopUp';
 
 import './BlackJackGame.scss';
 
 export default function BlackJackGame() {
+  const { add, subtract } = useBalance();
+
   // Function to calculate the total value of a hand
   const calculateHandValue = (hand) => {
     let aceCount = 0;
@@ -283,14 +287,17 @@ export default function BlackJackGame() {
   };
 
   // Sets up the game
-  useEffect(() => {
-    setUpGame();
-  }, [setUpGame]);
+  // useEffect(() => {
+  //   setUpGame();
+  // }, [setUpGame]);
 
   return (
     <div className='Wrapper-Bg'>
       <div className='Wrapper'>
-        <Balance balance={0} />
+        <div className='Side-Wrapper'>
+          <Balance balance={0} />
+          <Chips />
+        </div>
         <main className='Game Game-Wrapper'>
           <h1>BlackJack</h1>
           <div className='Game Game-Header'>

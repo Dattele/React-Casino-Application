@@ -3,10 +3,10 @@
   align-items: center;
   justify-content: center;
   z-index: 10;
-  order: 2;
+  // order: 2;
   padding: 1.5rem;
   @media (min-width: 42rem) {
-    order: 1;
+    // order: 1;
     padding: 0rem;
   }
 }
