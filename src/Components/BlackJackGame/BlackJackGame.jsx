@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useReducer } from 'react';
+import React, { useState, useCallback, useReducer, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   getDeck,
@@ -10,13 +10,40 @@ import {
 
 import Balance from '../Balance';
 import Chips from '../Chips';
-// import { useBalance } from '../../Context/BalanceContext';
+import { useBalance } from '../../Context/BalanceContext';
 import PopUp from '../PopUp/PopUp';
+import { ReactComponent as RedChip } from '../../Assets/Images/RedChip.svg';
+import { ReactComponent as BlueChip } from '../../Assets/Images/BlueChip.svg';
+import { ReactComponent as GreenChip } from '../../Assets/Images/GreenChip.svg';
+import { ReactComponent as BlackChip } from '../../Assets/Images/BlackChip.svg';
 
 import './BlackJackGame.scss';
 
+const CHIP_DEFINITIONS = {
+  Red: {
+    value: 5,
+    label: '$5',
+    Component: RedChip,
+  },
+  Blue: {
+    value: 10,
+    label: '$10',
+    Component: BlueChip,
+  },
+  Green: {
+    value: 25,
+    label: '$25',
+    Component: GreenChip,
+  },
+  Black: {
+    value: 100,
+    label: '$100',
+    Component: BlackChip,
+  },
+};
+
 export default function BlackJackGame() {
-  // const { add, subtract } = useBalance();
+  const { add, subtract, balance } = useBalance();
 
   // Function to calculate the total value of a hand
   const calculateHandValue = (hand) => {
@@ -51,6 +78,8 @@ export default function BlackJackGame() {
     result: '',
     isPopupVisible: false,
     backOfCardURL: '',
+    phase: 'betting',
+    betStack: [],
   };
 
   const BlackJackReducer = (state, action) => {
@@ -84,6 +113,7 @@ export default function BlackJackGame() {
           ...state,
           result: gameResult,
           isPopupVisible: true,
+          phase: 'result',
         };
       }
       case 'SET_UP_GAME': {
@@ -104,19 +134,34 @@ export default function BlackJackGame() {
           backOfCardURL: backURL,
           playerTotal: playerStartTotal,
           dealerTotal: dealerStartTotal,
+          phase: 'playing',
         };
       }
       case 'RESET_GAME': {
         return {
-          deckId: null,
-          dealerHand: [],
-          playerHand: [],
-          dealerTotal: 0,
-          playerTotal: 0,
-          showDealersTotal: false,
-          result: '',
-          isPopupVisible: false,
-          backOfCardURL: '',
+          ...initialState,
+        };
+      }
+      case 'ADD_BET_CHIP': {
+        const { id, type } = action.payload;
+        return {
+          ...state,
+          betStack: [...state.betStack, { id, type }],
+        };
+      }
+
+      case 'REMOVE_BET_CHIP': {
+        const { chipId } = action.payload;
+        return {
+          ...state,
+          betStack: state.betStack.filter((c) => c.id !== chipId),
+        };
+      }
+
+      case 'CLEAR_BET': {
+        return {
+          ...state,
+          betStack: [],
         };
       }
       default: {
@@ -129,6 +174,13 @@ export default function BlackJackGame() {
     ...initialState,
   });
 
+  const betAmount = useMemo(() => {
+    return state.betStack.reduce(
+      (sum, chip) => sum + CHIP_DEFINITIONS[chip.type].value,
+      0,
+    );
+  }, [state.betStack]);
+
   const navigate = useNavigate();
 
   // Function that navigates to home page
@@ -140,6 +192,47 @@ export default function BlackJackGame() {
   const handlePlayAgainClick = () => {
     resetGame();
     setUpGame();
+  };
+
+  // Add a chip to the bet
+  const addToBet = (type) => {
+    if (state.phase !== 'betting') return; // Don't allow changes mid-hand
+
+    const chip = CHIP_DEFINITIONS[type];
+    if (balance < chip.value) return; // Make sure user has enough balance
+
+    subtract(chip.value);
+
+    const id = crypto.randomUUID();
+    dispatch({
+      type: 'ADD_BET_CHIP',
+      payload: { id, type },
+    });
+  };
+
+  // Remove a chip from the bet
+  const removeFromBet = (chipId) => {
+    if (state.phase !== 'betting') return;
+
+    const chipEntry = state.betStack.find((c) => c.id === chipId);
+    if (!chipEntry) return;
+
+    add(CHIP_DEFINITIONS[chipEntry.type].value);
+
+    dispatch({
+      type: 'REMOVE_BET_CHIP',
+      payload: { chipId },
+    });
+  };
+
+  // Clear the whole bet
+  const clearBet = () => {
+    if (state.phase !== 'betting') return;
+
+    // refund everything
+    if (betAmount > 0) add(betAmount);
+
+    dispatch({ type: 'CLEAR_BET' });
   };
 
   // Function for setting up the player and dealers hands
@@ -170,31 +263,33 @@ export default function BlackJackGame() {
    * Dealer doesn't draw if hand is at 17 or above, or if player busts
    * Draw a card until the dealer's total reaches 17
    */
-  const handleDealer = async () => {
+  const handleDealer = async (finalPlayerTotal) => {
+    if (finalPlayerTotal > 21) {
+      determineWinner(finalPlayerTotal, state.dealerTotal);
+      return;
+    }
+
     let newTotal = state.dealerTotal;
+    let updatedHand = [...state.dealerHand];
 
-    const dealerMoves = async () => {
-      let updatedHand = [...state.dealerHand];
-      console.log('dealers newTotal', newTotal);
-      console.log('dealers player total', state.playerTotal);
+    // const dealerMoves = async () => {
+    while (newTotal < 17 && finalPlayerTotal <= 21) {
+      const newCard = await drawCard(state.deckId, 1);
+      updatedHand = [...updatedHand, ...newCard];
+      newTotal = calculateHandValue(updatedHand);
+      await sleep(2000);
 
-      while (newTotal < 17 && state.playerTotal <= 21) {
-        const newCard = await drawCard(state.deckId, 1);
-        updatedHand = [...updatedHand, ...newCard];
-        newTotal = calculateHandValue(updatedHand);
-        await sleep(2000);
+      dispatch({
+        type: 'SET_DEALER_HAND',
+        payload: { updatedHand, newTotal },
+      });
+    }
 
-        dispatch({
-          type: 'SET_DEALER_HAND',
-          payload: { newCard, updatedHand, newTotal },
-        });
-      }
+    await sleep(1000);
+    determineWinner(state.playerTotal, newTotal);
+    // };
 
-      await sleep(1000);
-      determineWinner(state.playerTotal, newTotal);
-    };
-
-    dealerMoves();
+    // dealerMoves();
   };
 
   /* Handle the user hitting the hit button
@@ -215,37 +310,46 @@ export default function BlackJackGame() {
       });
 
       await sleep(1000);
-      if (newTotal > 20) {
-        handleStand();
+      if (newTotal === 21) {
+        handleStand(newTotal);
+      }
+
+      if (newTotal > 21) {
+        dispatch({ type: 'HANDLE_STAND' }); // UI reveal
+        determineWinner(newTotal, state.dealerTotal);
       }
     }
   };
 
   // Handle the user hitting the stand button
   // Dealer then plays if player did not bust
-  const handleStand = () => {
+  const handleStand = async (playerTotal) => {
+    const finalPlayerTotal = playerTotal ?? state.playerTotal;
     dispatch({
       type: 'HANDLE_STAND',
     });
 
-    handleDealer();
+    await handleDealer(finalPlayerTotal);
   };
 
-  //Determines who the winner of the game is
+  // Determines who the winner of the game is
   const determineWinner = (playerTotal, dealerTotal) => {
     let gameResult;
     console.log('player total', playerTotal);
     console.log('dealer total', dealerTotal);
     if (playerTotal > 21) {
-      gameResult = `Player busts, Dealer wins with the score ${dealerTotal}!`;
+      gameResult = `Player busts, losing $${betAmount}, Dealer wins with the score ${dealerTotal}!`;
     } else if (dealerTotal > 21) {
-      gameResult = `Dealer busts, Player wins with the score ${playerTotal}!`;
+      gameResult = `Dealer busts, Player wins $${betAmount * 2} with the score ${playerTotal}!!`;
+      add(betAmount * 2);
     } else if (playerTotal > dealerTotal) {
-      gameResult = `Player wins with the score ${playerTotal}!`;
+      gameResult = `Player wins $${betAmount * 2} with the score ${playerTotal}!!`;
+      add(betAmount * 2);
     } else if (playerTotal === dealerTotal) {
-      gameResult = 'Tie Game! Take your chips back.';
+      gameResult = `Tie Game! Take your chips back - $${betAmount}.`;
+      add(betAmount);
     } else {
-      gameResult = `Dealer wins with the score ${dealerTotal}!`;
+      gameResult = `Dealer wins with the score ${dealerTotal}! Player loses $${betAmount}.. better luck next time!`;
     }
 
     dispatch({
@@ -286,17 +390,20 @@ export default function BlackJackGame() {
     });
   };
 
-  // Sets up the game
-  useEffect(() => {
-    setUpGame();
-  }, [setUpGame]);
-
   return (
     <div className='Wrapper-Bg'>
       <div className='Wrapper'>
         <div className='Side-Wrapper'>
           <Balance balance={0} />
-          <Chips />
+          <Chips
+            onDeal={setUpGame}
+            chips={CHIP_DEFINITIONS}
+            betAmount={betAmount}
+            betStack={state.betStack}
+            addToBet={addToBet}
+            removeFromBet={removeFromBet}
+            disabled={state.phase !== 'betting'}
+          />
         </div>
         <main className='Game Game-Wrapper'>
           <h1>BlackJack</h1>
@@ -329,12 +436,17 @@ export default function BlackJackGame() {
               <p>Total: {state.playerTotal}</p>
             </div>
             <div className='Game Game-Footer Game-Footer-Buttons'>
-              <button className='Button Button-Game-Footer' onClick={handleHit}>
+              <button
+                className='Button Button-Game-Footer'
+                onClick={handleHit}
+                disabled={state.phase !== 'playing'}
+              >
                 Hit
               </button>
               <button
                 className='Button Button-Game-Footer'
                 onClick={handleStand}
+                disabled={state.phase !== 'playing'}
               >
                 Stand
               </button>

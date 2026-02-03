@@ -51,6 +51,10 @@
 
 .Side-Wrapper {
   order: 2;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+
   @media (min-width: 42rem) {
     order: 1;
   }

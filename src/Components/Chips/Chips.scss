@@ -12,7 +12,8 @@
 }
 
 .Bet-Balance {
-  margin-top: 1.5rem;
+  margin-top: 1rem;
+  margin-bottom: 1rem;
   span {
     display: flex;
     justify-self: center;
@@ -42,8 +43,8 @@
     button {
       padding: 0rem;
       border: 0rem;
-      width: 100px;
-      height: 100px;
+      width: 90px;
+      height: 90px;
       transition: transform 0.33s;
 
       &:hover,
@@ -60,4 +61,12 @@
       height: 100%;
     }
   }
+}
+
+.Button-Place-Bet {
+  margin-left: auto;
+  margin-right: auto;
+  margin-top: 1rem;
+  border: 2px solid white !important;
+  border-radius: 0.75rem;
 }
