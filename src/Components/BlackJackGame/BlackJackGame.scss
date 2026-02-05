@@ -24,7 +24,13 @@
       flex-wrap: wrap;
     }
     &-Buttons {
-      flex-direction: row;
+      .Hit-Stand-Container,
+      .Double-Split-Container {
+        display: flex;
+      }
+      .Double-Split-Container {
+        margin-top: 1rem;
+      }
     }
     &-Text {
       p {

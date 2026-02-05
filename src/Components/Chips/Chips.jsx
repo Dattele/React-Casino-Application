@@ -50,7 +50,7 @@ export default function Chips({
         onClick={onDeal}
         disabled={disabled || betAmount <= 0}
       >
-        Deal ({betAmount})
+        Deal (${betAmount})
       </button>
     </div>
   );

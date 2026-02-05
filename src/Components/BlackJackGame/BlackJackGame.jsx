@@ -80,6 +80,8 @@ export default function BlackJackGame() {
     backOfCardURL: '',
     phase: 'betting',
     betStack: [],
+    handBet: 0,
+    hasActed: false,
   };
 
   const BlackJackReducer = (state, action) => {
@@ -90,12 +92,14 @@ export default function BlackJackGame() {
           ...state,
           playerHand: updatedHand,
           playerTotal: newTotal,
+          hasActed: true,
         };
       }
       case 'HANDLE_STAND': {
         return {
           ...state,
           showDealersTotal: true,
+          hasActed: true,
         };
       }
       case 'SET_DEALER_HAND': {
@@ -124,6 +128,7 @@ export default function BlackJackGame() {
           backURL,
           playerStartTotal,
           dealerStartTotal,
+          betAmount,
         } = action.payload;
 
         return {
@@ -135,6 +140,8 @@ export default function BlackJackGame() {
           playerTotal: playerStartTotal,
           dealerTotal: dealerStartTotal,
           phase: 'playing',
+          hasActed: false,
+          handBet: betAmount,
         };
       }
       case 'RESET_GAME': {
@@ -164,6 +171,12 @@ export default function BlackJackGame() {
           betStack: [],
         };
       }
+
+      case 'SET_HAND_BET': {
+        const { doubleBet } = action.payload;
+        return { ...state, handBet: doubleBet };
+      }
+
       default: {
         return state;
       }
@@ -191,8 +204,14 @@ export default function BlackJackGame() {
   // Function for when user wants to play again
   const handlePlayAgainClick = () => {
     resetGame();
-    setUpGame();
   };
+
+  // Can the user double
+  const canDouble =
+    state.phase === 'playing' &&
+    !state.hasActed &&
+    state.playerHand.length === 2 &&
+    balance >= state.handBet;
 
   // Add a chip to the bet
   const addToBet = (type) => {
@@ -270,26 +289,26 @@ export default function BlackJackGame() {
     }
 
     let newTotal = state.dealerTotal;
-    let updatedHand = [...state.dealerHand];
 
-    // const dealerMoves = async () => {
-    while (newTotal < 17 && finalPlayerTotal <= 21) {
-      const newCard = await drawCard(state.deckId, 1);
-      updatedHand = [...updatedHand, ...newCard];
-      newTotal = calculateHandValue(updatedHand);
-      await sleep(2000);
+    const dealerMoves = async () => {
+      let updatedHand = [...state.dealerHand];
+      while (newTotal < 17 && finalPlayerTotal <= 21) {
+        const newCard = await drawCard(state.deckId, 1);
+        updatedHand = [...updatedHand, ...newCard];
+        newTotal = calculateHandValue(updatedHand);
+        await sleep(2000);
 
-      dispatch({
-        type: 'SET_DEALER_HAND',
-        payload: { updatedHand, newTotal },
-      });
-    }
+        dispatch({
+          type: 'SET_DEALER_HAND',
+          payload: { updatedHand, newTotal },
+        });
+      }
 
-    await sleep(1000);
-    determineWinner(state.playerTotal, newTotal);
-    // };
+      await sleep(1000);
+      determineWinner(finalPlayerTotal, newTotal);
+    };
 
-    // dealerMoves();
+    dealerMoves();
   };
 
   /* Handle the user hitting the hit button
@@ -323,33 +342,73 @@ export default function BlackJackGame() {
 
   // Handle the user hitting the stand button
   // Dealer then plays if player did not bust
-  const handleStand = async (playerTotal) => {
-    const finalPlayerTotal = playerTotal ?? state.playerTotal;
+  const handleStand = (finalPlayerTotal = state.playerTotal) => {
     dispatch({
       type: 'HANDLE_STAND',
     });
 
-    await handleDealer(finalPlayerTotal);
+    console.log('Player Total in HandleStand', finalPlayerTotal);
+    handleDealer(finalPlayerTotal);
   };
+
+  /*
+   * Handle the user hitting the double button
+   * Only can be hit at the start of the turn
+   * Can only draw one card - then it ends your turn
+   */
+  const handleDouble = async () => {
+    if (!canDouble) return;
+    console.log('handBet', state.handBet);
+    // Take the additional wager
+    subtract(state.handBet);
+
+    // Double the hand bet
+    const doubleBet = state.handBet * 2;
+    console.log('doubleBet', doubleBet);
+    dispatch({
+      type: 'SET_HAND_BET',
+      payload: { doubleBet },
+    });
+    console.log('updated handBet', state.handBet);
+    // Player draws only one card
+    const newCard = await drawCard(state.deckId, 1);
+    const updatedHand = [...state.playerHand, ...newCard];
+    const newTotal = calculateHandValue(updatedHand);
+
+    dispatch({
+      type: 'HANDLE_HIT',
+      payload: { updatedHand, newTotal },
+    });
+
+    await sleep(1000);
+    handleStand(newTotal);
+  };
+
+  /*
+   * Handle the user hitting the split button
+   * Can only be done when user has two of the same cards
+   */
+  // const handleSplit = () => {};
 
   // Determines who the winner of the game is
   const determineWinner = (playerTotal, dealerTotal) => {
     let gameResult;
+    const wager = state.handBet;
     console.log('player total', playerTotal);
     console.log('dealer total', dealerTotal);
     if (playerTotal > 21) {
-      gameResult = `Player busts, losing $${betAmount}, Dealer wins with the score ${dealerTotal}!`;
+      gameResult = `Player busts, losing $${wager}, Dealer wins with the score ${dealerTotal}!`;
     } else if (dealerTotal > 21) {
-      gameResult = `Dealer busts, Player wins $${betAmount * 2} with the score ${playerTotal}!!`;
-      add(betAmount * 2);
+      gameResult = `Dealer busts, Player wins $${wager * 2} with the score ${playerTotal}!!`;
+      add(wager * 2);
     } else if (playerTotal > dealerTotal) {
-      gameResult = `Player wins $${betAmount * 2} with the score ${playerTotal}!!`;
-      add(betAmount * 2);
+      gameResult = `Player wins $${wager * 2} with the score ${playerTotal}!!`;
+      add(wager * 2);
     } else if (playerTotal === dealerTotal) {
-      gameResult = `Tie Game! Take your chips back - $${betAmount}.`;
-      add(betAmount);
+      gameResult = `Tie Game! Take your chips back - $${wager}.`;
+      add(wager);
     } else {
-      gameResult = `Dealer wins with the score ${dealerTotal}! Player loses $${betAmount}.. better luck next time!`;
+      gameResult = `Dealer wins with the score ${dealerTotal}! Player loses $${wager}.. better luck next time!`;
     }
 
     dispatch({
@@ -359,7 +418,7 @@ export default function BlackJackGame() {
   };
 
   // Function for setting up the game
-  const setUpGame = useCallback(async () => {
+  const setUpGame = async () => {
     const newDeckId = await getDeck();
     await reShuffle(newDeckId);
 
@@ -379,9 +438,10 @@ export default function BlackJackGame() {
         backURL,
         playerStartTotal,
         dealerStartTotal,
+        betAmount,
       },
     });
-  }, []);
+  };
 
   // Resets the game
   const resetGame = () => {
@@ -436,20 +496,38 @@ export default function BlackJackGame() {
               <p>Total: {state.playerTotal}</p>
             </div>
             <div className='Game Game-Footer Game-Footer-Buttons'>
-              <button
-                className='Button Button-Game-Footer'
-                onClick={handleHit}
-                disabled={state.phase !== 'playing'}
-              >
-                Hit
-              </button>
-              <button
-                className='Button Button-Game-Footer'
-                onClick={handleStand}
-                disabled={state.phase !== 'playing'}
-              >
-                Stand
-              </button>
+              <div className='Hit-Stand-Container'>
+                <button
+                  className='Button Button-Game-Footer'
+                  onClick={handleHit}
+                  disabled={state.phase !== 'playing'}
+                >
+                  Hit
+                </button>
+                <button
+                  className='Button Button-Game-Footer'
+                  onClick={() => handleStand(state.playerTotal)}
+                  disabled={state.phase !== 'playing'}
+                >
+                  Stand
+                </button>
+              </div>
+              <div className='Double-Split-Container'>
+                <button
+                  className='Button Button-Game-Footer'
+                  onClick={handleDouble}
+                  disabled={!canDouble}
+                >
+                  Double
+                </button>
+                {/* <button
+                  className='Button Button-Game-Footer'
+                  onClick={handleSplit}
+                  disabled={state.phase !== 'playing'}
+                >
+                  Split
+                </button> */}
+              </div>
             </div>
           </div>
         </main>

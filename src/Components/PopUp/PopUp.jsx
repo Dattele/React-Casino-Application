@@ -8,11 +8,11 @@ export default function PopUp({ result, onHome, onPlayAgain }) {
       <div className='Game-Body-Popup'>
         <p className='Result-Text'>{result}</p>
         <div className='Game-Body-Popup-Buttons'>
-          <button className='Button Button-Home' onClick={onHome}>
-            Home
-          </button>
           <button className='Button Button-Play' onClick={onPlayAgain}>
             Play Again
+          </button>
+          <button className='Button Button-Home' onClick={onHome}>
+            Home
           </button>
         </div>
       </div>
