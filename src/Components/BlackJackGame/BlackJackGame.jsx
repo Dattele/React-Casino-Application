@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useReducer, useMemo } from 'react';
+import React, { useReducer, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   getDeck,
@@ -245,14 +245,14 @@ export default function BlackJackGame() {
   };
 
   // Clear the whole bet
-  const clearBet = () => {
-    if (state.phase !== 'betting') return;
+  // const clearBet = () => {
+  //   if (state.phase !== 'betting') return;
 
-    // refund everything
-    if (betAmount > 0) add(betAmount);
+  //   // refund everything
+  //   if (betAmount > 0) add(betAmount);
 
-    dispatch({ type: 'CLEAR_BET' });
-  };
+  //   dispatch({ type: 'CLEAR_BET' });
+  // };
 
   // Function for setting up the player and dealers hands
   const renderHand = (hand, isDealer) => {
