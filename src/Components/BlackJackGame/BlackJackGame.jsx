@@ -156,7 +156,6 @@ export default function BlackJackGame() {
           betStack: [...state.betStack, { id, type }],
         };
       }
-
       case 'REMOVE_BET_CHIP': {
         const { chipId } = action.payload;
         return {
@@ -164,19 +163,12 @@ export default function BlackJackGame() {
           betStack: state.betStack.filter((c) => c.id !== chipId),
         };
       }
-
       case 'CLEAR_BET': {
         return {
           ...state,
           betStack: [],
         };
       }
-
-      case 'SET_HAND_BET': {
-        const { doubleBet } = action.payload;
-        return { ...state, handBet: doubleBet };
-      }
-
       default: {
         return state;
       }
@@ -282,7 +274,7 @@ export default function BlackJackGame() {
    * Dealer doesn't draw if hand is at 17 or above, or if player busts
    * Draw a card until the dealer's total reaches 17
    */
-  const handleDealer = async (finalPlayerTotal) => {
+  const handleDealer = async (finalPlayerTotal, wager) => {
     if (finalPlayerTotal > 21) {
       determineWinner(finalPlayerTotal, state.dealerTotal);
       return;
@@ -305,7 +297,7 @@ export default function BlackJackGame() {
       }
 
       await sleep(1000);
-      determineWinner(finalPlayerTotal, newTotal);
+      determineWinner(finalPlayerTotal, newTotal, wager);
     };
 
     dealerMoves();
@@ -342,13 +334,16 @@ export default function BlackJackGame() {
 
   // Handle the user hitting the stand button
   // Dealer then plays if player did not bust
-  const handleStand = (finalPlayerTotal = state.playerTotal) => {
+  const handleStand = (
+    finalPlayerTotal = state.playerTotal,
+    wager = state.handBet,
+  ) => {
     dispatch({
       type: 'HANDLE_STAND',
     });
 
     console.log('Player Total in HandleStand', finalPlayerTotal);
-    handleDealer(finalPlayerTotal);
+    handleDealer(finalPlayerTotal, wager);
   };
 
   /*
@@ -359,29 +354,24 @@ export default function BlackJackGame() {
   const handleDouble = async () => {
     if (!canDouble) return;
     console.log('handBet', state.handBet);
-    // Take the additional wager
+
+    // Double the original wager
     subtract(state.handBet);
 
     // Double the hand bet
-    const doubleBet = state.handBet * 2;
-    console.log('doubleBet', doubleBet);
-    dispatch({
-      type: 'SET_HAND_BET',
-      payload: { doubleBet },
-    });
-    console.log('updated handBet', state.handBet);
-    // Player draws only one card
+    const doubleHandBet = state.handBet * 2;
+
+    // Draw a card and update the hand
     const newCard = await drawCard(state.deckId, 1);
     const updatedHand = [...state.playerHand, ...newCard];
     const newTotal = calculateHandValue(updatedHand);
-
     dispatch({
       type: 'HANDLE_HIT',
       payload: { updatedHand, newTotal },
     });
 
-    await sleep(1000);
-    handleStand(newTotal);
+    console.log('updated handBet', state.handBet);
+    handleStand(newTotal, doubleHandBet);
   };
 
   /*
@@ -391,9 +381,9 @@ export default function BlackJackGame() {
   // const handleSplit = () => {};
 
   // Determines who the winner of the game is
-  const determineWinner = (playerTotal, dealerTotal) => {
+  const determineWinner = (playerTotal, dealerTotal, wager) => {
     let gameResult;
-    const wager = state.handBet;
+
     console.log('player total', playerTotal);
     console.log('dealer total', dealerTotal);
     if (playerTotal > 21) {
