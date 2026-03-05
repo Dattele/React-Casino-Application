@@ -80,7 +80,6 @@ export default function BlackJackGame() {
     backOfCardURL: '',
     phase: 'betting',
     betStack: [],
-    handBet: 0,
     hasActed: false,
   };
 
@@ -128,7 +127,6 @@ export default function BlackJackGame() {
           backURL,
           playerStartTotal,
           dealerStartTotal,
-          betAmount,
         } = action.payload;
 
         return {
@@ -141,7 +139,6 @@ export default function BlackJackGame() {
           dealerTotal: dealerStartTotal,
           phase: 'playing',
           hasActed: false,
-          handBet: betAmount,
         };
       }
       case 'RESET_GAME': {
@@ -203,7 +200,7 @@ export default function BlackJackGame() {
     state.phase === 'playing' &&
     !state.hasActed &&
     state.playerHand.length === 2 &&
-    balance >= state.handBet;
+    balance >= betAmount;
 
   // Add a chip to the bet
   const addToBet = (type) => {
@@ -276,7 +273,7 @@ export default function BlackJackGame() {
    */
   const handleDealer = async (finalPlayerTotal, wager) => {
     if (finalPlayerTotal > 21) {
-      determineWinner(finalPlayerTotal, state.dealerTotal);
+      determineWinner(finalPlayerTotal, state.dealerTotal, betAmount);
       return;
     }
 
@@ -327,7 +324,7 @@ export default function BlackJackGame() {
 
       if (newTotal > 21) {
         dispatch({ type: 'HANDLE_STAND' }); // UI reveal
-        determineWinner(newTotal, state.dealerTotal);
+        determineWinner(newTotal, state.dealerTotal, betAmount);
       }
     }
   };
@@ -336,7 +333,7 @@ export default function BlackJackGame() {
   // Dealer then plays if player did not bust
   const handleStand = (
     finalPlayerTotal = state.playerTotal,
-    wager = state.handBet,
+    wager = betAmount,
   ) => {
     dispatch({
       type: 'HANDLE_STAND',
@@ -353,13 +350,12 @@ export default function BlackJackGame() {
    */
   const handleDouble = async () => {
     if (!canDouble) return;
-    console.log('handBet', state.handBet);
 
     // Double the original wager
-    subtract(state.handBet);
+    subtract(betAmount);
 
     // Double the hand bet
-    const doubleHandBet = state.handBet * 2;
+    const doubleHandBet = betAmount * 2;
 
     // Draw a card and update the hand
     const newCard = await drawCard(state.deckId, 1);
@@ -370,7 +366,7 @@ export default function BlackJackGame() {
       payload: { updatedHand, newTotal },
     });
 
-    console.log('updated handBet', state.handBet);
+    await sleep(500);
     handleStand(newTotal, doubleHandBet);
   };
 
@@ -381,7 +377,12 @@ export default function BlackJackGame() {
   // const handleSplit = () => {};
 
   // Determines who the winner of the game is
-  const determineWinner = (playerTotal, dealerTotal, wager) => {
+  const determineWinner = (
+    playerTotal,
+    dealerTotal,
+    wager,
+    blackjack = false,
+  ) => {
     let gameResult;
 
     console.log('player total', playerTotal);
@@ -389,11 +390,11 @@ export default function BlackJackGame() {
     if (playerTotal > 21) {
       gameResult = `Player busts, losing $${wager}, Dealer wins with the score ${dealerTotal}!`;
     } else if (dealerTotal > 21) {
-      gameResult = `Dealer busts, Player wins $${wager * 2} with the score ${playerTotal}!!`;
-      add(wager * 2);
+      gameResult = `Dealer busts, Player wins $${blackjack ? wager * 2.5 : wager * 2} with the score ${playerTotal}!!`;
+      add(blackjack ? wager * 2.5 : wager * 2);
     } else if (playerTotal > dealerTotal) {
-      gameResult = `Player wins $${wager * 2} with the score ${playerTotal}!!`;
-      add(wager * 2);
+      gameResult = `Player wins $${blackjack ? wager * 2.5 : wager * 2} with the score ${playerTotal}!!`;
+      add(blackjack ? wager * 2.5 : wager * 2);
     } else if (playerTotal === dealerTotal) {
       gameResult = `Tie Game! Take your chips back - $${wager}.`;
       add(wager);
@@ -431,6 +432,12 @@ export default function BlackJackGame() {
         betAmount,
       },
     });
+
+    if (playerStartTotal === 21 && dealerStartTotal !== 21) {
+      state.phase = 'blackjack';
+      await sleep(500);
+      determineWinner(playerStartTotal, dealerStartTotal, betAmount, true);
+    }
   };
 
   // Resets the game
