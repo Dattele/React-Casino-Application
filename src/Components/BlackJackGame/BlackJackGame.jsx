@@ -99,6 +99,7 @@ export default function BlackJackGame() {
           ...state,
           showDealersTotal: true,
           hasActed: true,
+          phase: 'dealer',
         };
       }
       case 'SET_DEALER_HAND': {
@@ -272,6 +273,8 @@ export default function BlackJackGame() {
    * Draw a card until the dealer's total reaches 17
    */
   const handleDealer = async (finalPlayerTotal, wager) => {
+    await sleep(1000);
+
     if (finalPlayerTotal > 21) {
       determineWinner(finalPlayerTotal, state.dealerTotal, betAmount);
       return;
@@ -317,7 +320,6 @@ export default function BlackJackGame() {
         payload: { newCard, updatedHand, newTotal },
       });
 
-      await sleep(1000);
       if (newTotal === 21) {
         handleStand(newTotal);
       }
@@ -366,7 +368,6 @@ export default function BlackJackGame() {
       payload: { updatedHand, newTotal },
     });
 
-    await sleep(500);
     handleStand(newTotal, doubleHandBet);
   };
 

@@ -74,4 +74,7 @@
   margin: $spacer0 $spacer2 !important;
   border: 2px solid $whiteColor !important;
   border-radius: 0.75rem;
+  &:disabled {
+    background-color: #880808 !important;
+  }
 }
